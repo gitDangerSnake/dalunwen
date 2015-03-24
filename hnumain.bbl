@@ -1,0 +1,71 @@
+\begin{thebibliography}{10}
+
+\bibitem{djy}
+dujiayi, latex.
+\newblock  {\url{http://www.nasa.org/}}, 1995-12-5
+
+\bibitem{kocher99}
+C.~Kocher, J.~Jaffe, B.~Jun.
+\newblock Differential Power Analysis.
+\newblock In: Proc of Advances in Cryptology ({CRYPTO}~'99), volume 1666 of
+  Lecture Notes in Computer Science.
+\newblock Springer-Verlag, 1999,  388--397
+
+\bibitem{tex}
+Donald~E. Knuth.
+\newblock The {\TeX} Book.
+\newblock 15th.
+\newblock Reading, MA: Addison-Wesley Publishing Company, 1989
+
+\bibitem{companion}
+Michel Goosens, Frank Mittelbach, Alexander Samarin.
+\newblock The {\LaTeX} Companion.
+\newblock Reading, MA: Addison-Wesley Publishing Company, 1994: 112--125
+
+\bibitem{NPB2}
+Alex Woo, David Bailey, Maurice Yarrow, et~al.
+\newblock The {NAS} Parallel Benchmarks 2.0.
+\newblock Technical report, The Pennsylvania State University CiteSeer
+  Archives, 1995-12-5.
+\newblock  {\url{http://www.nasa.org/}}
+
+\bibitem{cnproceed}
+王重阳, 黄药师, 欧阳峰, 等.
+\newblock 武林高手从入门到精通.
+\newblock 见: 第~$N$~次华山论剑会议论文集.
+\newblock 西安, 中国, 2006
+
+\bibitem{cnarticle}
+贾宝玉, 林黛玉, 薛宝钗, 等.
+\newblock 论刘姥姥食量大如牛之现实意义.
+\newblock 红楼梦杂谈, 1800, 224:260--266
+
+\bibitem{ELIDRISSI94}
+M.~{Chafik El Idrissi}, A.~{Roney}, C.~{Frigon}, et~al.
+\newblock Measurements of total kinetic-energy released to the {$N=2$}
+  dissociation limit of {H}$_2$ --- evidence of the dissociation of very high
+  vibrational {R}ydberg states of {H}$_2$ by doubly-excited states.
+\newblock Chemical Physics Letters, 1994, 224(10):260--266
+
+\bibitem{zhubajie}
+猪八戒.
+\newblock 论流体食物的持久保存:  [广寒宫大学硕士学位论文].
+\newblock 北京: 广寒宫大学, 2005
+
+\bibitem{shaheshang}
+沙和尚.
+\newblock 论流沙河的综合治理:  [清华大学博士学位论文].
+\newblock 北京: 清华大学, 2005
+
+\bibitem{metamori2004}
+Ashwin~Raju Jeyakumar.
+\newblock Metamori: A library for Incremental File Checkpointing:  [Thesis].
+\newblock Blacksburg: Virgina Tech, 2004-June~21
+
+\bibitem{FistSystem01}
+Erez Zadok.
+\newblock {FiST: A System for Stackable File System Code Generation}:
+  [Dissertation].
+\newblock USA: Computer Science Department, Columbia University, 2001-May
+
+\end{thebibliography}
