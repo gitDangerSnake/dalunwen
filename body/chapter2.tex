@@ -106,11 +106,24 @@ GraphChi和X-stream需要将大量的数据写入到磁盘中，因此对提高I
 然而，在新的计算模型中，数据的访问方式发生较大的变化。不需要缓存消息意味着不需要为缓存大量的中间消息设计复杂的磁盘IO功能。边与顶点的分离，使得要处理的数据量减少很多。相比较整个庞大的图而言，顶点的状态信息就显得适合常驻内存进行处理来获取更好的性能。由于不需要向磁盘写入大量的数据，出于容错性的考虑，我们采用内存映射的方式对顶点的状态信息进行组织。而对于庞大数量的边而言，松散的组织结构可以省去一些耗时较长的预处理，同时满足顺序访问的特点，避免复杂的IO优化操作。
 
 \subsection{数据组织设计}
+图的数据主要分为两个部分，顶点的状态信息和边。其中，顶点的状态信息以二进制的格式存储在内存映射文件当中。边则以行压缩（Compressed Sparse Row）格式保存在磁盘上。
 
-\subsubsection{状态信息组织}
-顶点的状态信息需要保存两份拷贝，并且状态信息需要常驻内存并能满足随机访问的要求。
+由于顶点的状态信息需要保存两份以供两种actor访问，所以在顶点状态信息的内存映射文件中，同一个顶点的状态信息以相邻的方式保存两份。通过这种简单的方式，可以快速的获取顶点\textit{V}的状态信息的值，即$|V| * sizeof(Val)*2$。当该内存映射文件被映射到内存中后，整个访问的过程就像在操作一个数组一样方便。
+The CSR format stores vertices and edges in separate arrays, with the indices into these arrays corresponding to the identifier for the vertex or edge, respectively. The edge array is sorted by the source of each edge, but contains only the targets for the edges. The vertex array stores offsets into the edge array, providing the offset of the first edge outgoing from each vertex. Iteration over the out-edges for the ith vertex in the graph is achieved by visiting edge_array[vertex_array[i]], edge_array[vertex_array[i]+1], ..., edge_array[vertex_array[i+1]]. This format minimizes memory use to O(n + m), where n and m are the number of vertices and edges, respectively. The constants multiplied by n and m are based on the size of the integers needed to represent indices into the edge and vertex arrays, respectively, which can be controlled using the template parameters. The Directed template parameter controls whether one edge direction (the default) or both directions are stored. A directed CSR graph has Directed = directedS and a bidirectional CSR graph (with a limited set of constructors) has Directed = bidirectionalS.
+CSR格式将顶点\textit{id}和边分别用两个数组进行保存，其中边数组保存边的目的顶点\textit{id}并按照出发顶点\textit{id}排序就，而在顶点数组中顶点的\textit{id}就是数组的索引，每个顶点保存第一个出边在在边数组中的索引，如图所示。
 
 
+\begin{figure}[htbp]
+
+ \begin{minipage}[]{0.5\textwidth}
+ \centering
+     \includegraphics[width=0.8\textwidth,angle=0,scale=1.2]{myfigures/csrdataformat.eps}
+\end{minipage}
+    \caption{\textbf{CSR example}  }
+	\textit{(a) a example graph (b) a csrfile content without vertex degree (c) csrfile content with vertex degree}
+    \label{figure:csrexample}
+
+\end{figure}
 
 \subsubsection{图结构组织}
 
