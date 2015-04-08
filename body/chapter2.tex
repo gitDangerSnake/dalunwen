@@ -49,7 +49,7 @@ BSP模型在分布式图处理系统中被广泛采用，主要是因为BSP模�
 
 鉴于当前的计算机以多核为主，单个计算机的计算能力、并发处理能力已经有了很大的提高，将BSP模型从分布式的环境中迁移到这样的多核的计算机上不仅可以充分利用多核的计算资源，还能够降低图计算的处理成本。同时，考虑到单机图处理系统与分布式图处理系统的兼容性，本文首先对BSP模型中存在的问题进行了分析，然后针对这些问题提出New BSP模型，并在New BSP模型的基础上实现一个便捷、高效、可靠的单机图处理系统GPSA。
 
-\vspace{\baselineskip}
+
 \begin{figure}[htbp]
 \centering
 \begin{minipage}{0.4\textwidth}
@@ -79,9 +79,9 @@ BSP模型在分布式图处理系统中被广泛采用，主要是因为BSP模�
 
 Actor-BSP模型是在执行过程上完全异步计算的模型，计算过程与消息分发过程想分离，使得两个过程可以在一定程度上并行执行，充分利用多核的优势。
 
-首先，在Actor-BSP模型中，Actor分为两种类型：负责消息分发过程的dispatching actor和负责计算过程的computing actor。得益于dispatching actor和computing actor之间的松耦合设计，两者之间的映射关系变得相当的灵活，缩短BSP模型在垂直方向上的执行流程，提高效率。
+首先，在Actor-BSP模型中，Actor分为两种类型：负责消息分发过程的分发Actor和负责计算过程的计算Actor。得益于分发Actor和计算Actor之间的松耦合设计，两者之间的映射关系变得相当的灵活，缩短BSP模型在垂直方向上的执行流程，提高效率。
 
-其次，dispatching actor 和 computing actor 组成了生产者和消费者模型，当消息到达computing actor之后，该actor会被调度执行，处理消息，从而无需保存这些消息，避免将消息进行缓存的IO开销。
+其次，分发Actor 和 计算Actor 组成了生产者和消费者模型，当消息到达计算Actor之后，该actor会被调度执行，处理消息，从而无需保存这些消息，避免将消息进行缓存的IO开销。
 
 \section{数据组织}
 
@@ -90,13 +90,13 @@ Actor-BSP模型是在执行过程上完全异步计算的模型，计算过程�
 \subsection{数据访问行为}
 在Actor-BSP模型中，Actor替换顶点成为整个计算展开的中心对象，之前顶点之间的消息的传递转变为Actor对象之间的消息通讯，从而导致新模型在数据读写方式上与传统的BSP模型不同。本小节从消息、顶点以及边的角度出发结合Actor-BSP模型展示其数据读写方式的行为特征。
 
-首先，消息无需缓存。由于Actor-BSP模型中，由于生产者和消费者的组合，computing actor监听消息到达事件，一旦事件到达消息就可以被及时处理。新模型无需为下一个超级步保存大量的消息，减少消息缓存的IO操作。
+首先，消息无需缓存。由于Actor-BSP模型中，由于生产者和消费者的组合，计算Actor监听消息到达事件，一旦事件到达消息就可以被及时处理。新模型无需为下一个超级步保存大量的消息，减少消息缓存的IO操作。
 
-其次，只有dispatching actor才会访问边。由于dispatching actor主要任务就是生产消息，而消息的产生和发送都与边有着紧密的联系。但是，computing actor不关心边的状态，只关心消息到达的事件以及如何处理消息与更新数据。
+其次，只有分发Actor才会访问边。由于分发Actor主要任务就是生产消息，而消息的产生和发送都与边有着紧密的联系。但是，计算Actor不关心边的状态，只关心消息到达的事件以及如何处理消息与更新数据。
 
-再次，顶点状态数据信息需要常驻内存来支持随机访问。在以顶点为中心的模型中，顶点是有状态信息的，当顶点开始对消息进行处理的时候，顶点自身的状态会包含在自己的数据域，并且参与到计算中。无状态的Actor不会持有特定消息所有者的顶点状态信息。如果computing actor接收到消息，它需要获取消息所有者的状态信息，然后调用用户提供的函数对消息进行处理。然而无状态的Actor并不记录消息到来的顺序及消息所有者的任何信息，所以无状态的Actor在处理消息的时候需要能够随机获取消息所有者的状态信息。
+再次，顶点状态数据信息需要常驻内存来支持随机访问。在以顶点为中心的模型中，顶点是有状态信息的，当顶点开始对消息进行处理的时候，顶点自身的状态会包含在自己的数据域，并且参与到计算中。无状态的Actor不会持有特定消息所有者的顶点状态信息。如果计算Actor接收到消息，它需要获取消息所有者的状态信息，然后调用用户提供的函数对消息进行处理。然而无状态的Actor并不记录消息到来的顺序及消息所有者的任何信息，所以无状态的Actor在处理消息的时候需要能够随机获取消息所有者的状态信息。
 
-最后，双份状态信息同时参与计算。在传统模型中，顶点的状态信息需要额外保存一份来判断状态是否发生更新。而在Actor-BSP模型中，顶点的状态信息的双份保存主要是因为dispatching actor和computing actor对状态信息读取的目的不同。dispatching actor获取顶点的状态信息主要是产生消息，而computing actor获取状态信息主要是用于处理消息，并且替换更新的状态信息。所以两者在获取的状态信息是不一致的。dispatching actor获取的状态信息主要是来自初始化或者上一个超级步的结果，而computing actor获取的状态信息却总是当前超步的最新结果。
+最后，双份状态信息同时参与计算。在传统模型中，顶点的状态信息需要额外保存一份来判断状态是否发生更新。而在Actor-BSP模型中，顶点的状态信息的双份保存主要是因为分发Actor和计算Actor对状态信息读取的目的不同。分发Actor获取顶点的状态信息主要是产生消息，而计算Actor获取状态信息主要是用于处理消息，并且替换更新的状态信息。所以两者在获取的状态信息是不一致的。分发Actor获取的状态信息主要是来自初始化或者上一个超级步的结果，而计算Actor获取的状态信息却总是当前超步的最新结果。
 
 
 
@@ -108,33 +108,55 @@ GraphChi和X-stream需要将大量的数据写入到磁盘中，因此对提高I
 \subsection{数据组织设计}
 图的数据主要分为两个部分，顶点的状态信息和边。其中，顶点的状态信息以二进制的格式存储在内存映射文件当中。边则以行压缩（Compressed Sparse Row）格式保存在磁盘上。
 
-由于顶点的状态信息需要保存两份以供两种actor访问，所以在顶点状态信息的内存映射文件中，同一个顶点的状态信息以相邻的方式保存两份。通过这种简单的方式，可以快速的获取顶点\textit{V}的状态信息的值，即$|V| * sizeof(Val)*2$。当该内存映射文件被映射到内存中后，整个访问的过程就像在操作一个数组一样方便。
-The CSR format stores vertices and edges in separate arrays, with the indices into these arrays corresponding to the identifier for the vertex or edge, respectively. The edge array is sorted by the source of each edge, but contains only the targets for the edges. The vertex array stores offsets into the edge array, providing the offset of the first edge outgoing from each vertex. Iteration over the out-edges for the ith vertex in the graph is achieved by visiting edge_array[vertex_array[i]], edge_array[vertex_array[i]+1], ..., edge_array[vertex_array[i+1]]. This format minimizes memory use to O(n + m), where n and m are the number of vertices and edges, respectively. The constants multiplied by n and m are based on the size of the integers needed to represent indices into the edge and vertex arrays, respectively, which can be controlled using the template parameters. The Directed template parameter controls whether one edge direction (the default) or both directions are stored. A directed CSR graph has Directed = directedS and a bidirectional CSR graph (with a limited set of constructors) has Directed = bidirectionalS.
-CSR格式将顶点\textit{id}和边分别用两个数组进行保存，其中边数组保存边的目的顶点\textit{id}并按照出发顶点\textit{id}排序就，而在顶点数组中顶点的\textit{id}就是数组的索引，每个顶点保存第一个出边在在边数组中的索引，如图所示。
-
-
 \begin{figure}[htbp]
-
- \begin{minipage}[]{0.5\textwidth}
- \centering
-     \includegraphics[width=0.8\textwidth,angle=0,scale=1.2]{myfigures/csrdataformat.eps}
+\centering
+\begin{minipage}{0.4\textwidth}
+\centering
+\includegraphics[width=\textwidth]{myfigures/graph.eps}
+\caption{例图}\label{fig:graph}
 \end{minipage}
-    \caption{\textbf{CSR example}  }
-	\textit{(a) a example graph (b) a csrfile content without vertex degree (c) csrfile content with vertex degree}
-    \label{figure:csrexample}
+\begin{minipage}{0.4\textwidth}
+\centering
+\includegraphics[width=0.8\textwidth]{myfigures/twocol.eps}
+\caption{两列存储}\label{fig:twocol}
+\end{minipage}
+\begin{minipage}{0.4\textwidth}
+\centering
+\includegraphics[width=\textwidth]{myfigures/csr.eps}
+\caption{CSR存储}\label{fig:csr}
+\end{minipage}
+\begin{minipage}{0.4\textwidth}
+\centering
+\includegraphics[width=\textwidth]{myfigures/ncsr.eps}
+\caption{顺序存储}\label{fig:ncsr}
+\end{minipage}
 
+\vspace{\baselineskip}
 \end{figure}
 
-\subsubsection{图结构组织}
+由于顶点的状态信息需要保存两份以供两种actor访问，所以在顶点状态信息的内存映射文件中，同一个顶点的状态信息以相邻的方式保存两份，就如同两排并列的数据，如图\ref{fig:twocol}所示。通过这种简单的方式，可以通过顶点\textit{id}计算顶点在整个文件中的偏移值来快速的获取顶点\textit{V}的状态信息的值，即$|V| * sizeof(Val)*2$。当该内存映射文件被映射到内存中后，整个访问的过程就像在操作一个数组一样方便。
 
-\subsubsection{消息格式}
-
+CSR格式将顶点\textit{id}和边分别用两个数组进行保存，其中边数组保存边的目的顶点\textit{id}并按照出发顶点\textit{id}排序就，而在顶点数组中顶点的\textit{id}就是数组的索引，每个顶点保存第一条边在在边数组中的索引。此时，如果需要遍历第\textit{i}个顶点的边，那么只需要访问EdgeArray[VertexArray[i]]，EdgeArray[VertexArray[i]+1]，···，EdgeArray[VertexArray[i+1]]就可以完成该顶点边的遍历。如图\ref{fig:csr}所示，在遍历顶点\textit{Vertex 2}时，就可以通过访问[EdgeArray[3],EdgeArray[6])对边顶点进行遍历。CSR格式的空间效率是O(n+m),其中n和m分别是边和顶点的个数。另外，还可以在CSR格式的基础上采用顺序存储的方式，每个不同顶点的边之间用分割符加以分别，如图\ref{fig:ncsr}(a)所示，不同顶点之间可以用\textit{-1}作为分隔符，对边的遍历只需要读取到-1为止即可，除此之外还可以保存除边之外的其他信息，例如出度，权值等，在图\ref{fig:ncsr}(b)中就额外保存了每个顶点的出度，数组中第一个索引位置的值是2，表示此处顶点的的出度是2，紧接着的是两条边，当读取到-1的时候，顶点的\textit{id}递增加一。
 
 \section{消息分发}
-\subsection{}
+消息是本系统的重要关注和处理的对象，虽然Actor-BSP模型的优势使得无需为消息进行额外的缓存，但是合理的消息产生和分发策略对系统的效率有着重要的影响。
+\subsection{消息}
+一般来说消息的主要有两部分内容组成：目的顶点和消息的值。目的顶点表明该消息前往的顶点，同时也会影响由哪个具体的计算Actor来处理该消息。消息的值则是计算Actor用来进行计算的数据。虽然消息的生成工作主要是由分发Actor负责，但是消息的值的生成方法根据应用的不同具体的生成算法也不一样。例如，在遍历应用中，消息的值则是一个表示从源点开始到目前顶点的一个层次数，而在PageRank算法中，消息的值则是当前顶点的权值均分到他的出边邻接顶点的浮点数。所以，具体的消息的实现过程，由用户自己实现，分发Actor则调用具体的生成算法产生消息。
 \subsection{分发策略}
+当消息生成之后，分发Actor需要将消息分发给计算Actor。在Actor-BSP模型中，以顶点为中心的方式被无状态的Actor代替，计算Actor需要均衡的处理这些消息。虽然Actor的上下文切换远比线程轻量级，但是Actor的调度依然可能成为性能的制约因素，所以需要对消息的分发过程进行额外的硬性控制来避免某个计算Actor的负载过重。理论上来说，每个计算Actor都应该处理差不多个数的消息，但是由于图结构是无规律的，消息的发送目的地也有很大程度的随意性，在短时间内平均的将消息发送给计算Actor的可能性也微乎其微。为达到这样的目的，GPSA在预处理阶段对计算Actor进行了任务分配，将消息按照目的顶点的次序均分给计算Actor。在分发的过程中，如果某个计算Actor的邮箱已满，无法接受更多消息，那么该消息将会发送到目前消息数目最少的计算Actor的邮箱中，从而实现动态均衡。
 
 \section{数据更新}
+计算Actor接收到消息之后，调用用户实现的具体计算函数，如果经过计算之后顶点的状态发生改变，那么计算Actor就需要更新顶点的状态信息写入内存。由于计算Actor和分发Actor对数据访问的行为不同，所以需要两份不同的顶点信息的拷贝。其中一份拷贝供分发Actor查询使用，该数据是上一个超级步后的结果；另外一份拷贝则供计算Actor进行更新。由于两份数据以“Two-Column”的方式进行保存，两份数据就可以以列进行区分，如图\ref{fig:vu}所示。计算Actor和分发Actor对这两列数据依次交替访问，计算Actor访问的数据列是计算列，而分发Actor访问的数据列是分发列。
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.4\textwidth]{myfigures/valueupdating.eps}
+\caption{数据更新}\label{fig:vu}
+\vspace{\baselineskip}
+\end{figure}
+
+在初始化结束之后，顶点的两列状态信息是相同的。分发Actor访问分发列的数据，然后计算Actor对计算列数据进行更新。在计算的过程中，为了避免消息的重复发送，同时保证计算Actor能够取得正确的顶点状态数据，将状态数据的最高位作为标识位。如果高位为1并且超级步\textit{i}大于0，则表示该数据在上一个超步中没有发生更新，分发Actor将会跳过该顶点，若高位为0，则说明数据在上一个超级步发生了更新，分发Actor会将此处数据对应的顶点的更新消息发送给它的邻接顶点，然后分发Actor将其高位置0。若超级步为0，则分发Actor会依次将顶点的状态信息发送出去。对于计算Actor，如果读取到的数据高位为1，则表明该数据尚未被更新，此时计算Actor将会读取该顶点的最新的状态信息，即从分发列对应位置获得最新值，如果计算之后顶点状态信息发生更新则把计算之后的新数据写入到当前顶点的计算列，否则不更新，下次读取数据依然从分发列读取数据。若计算Actor读取到的数据高位为0，则表明当前位置的数据是最新的，将会直接读取数据进行计算。如图\ref{fig:vu}所示，在初始化时，两列数据都相同并且最高位都为0。在超级步\textit{0}中，分发Actor对所有顶点的状态信息发送出去，计算Actor在接收到消息之后对计算列的数据进行更新。在超级步\textit{1}中，计算列和分发列互换位置，根据高位信息依次进行消息分发和数据更新。
+
 
 
 \section{GPSA实现}
