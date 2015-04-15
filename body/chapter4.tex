@@ -1,10 +1,46 @@
 % !Mode:: "TeX:UTF-8"
 
-\chapter{基于Actor-BSP模型的单机多核系统的图计算}
+\chapter{系统测试与分析}
 
-\section{Actor-BSP模型}
+为了证实GPSA系统的实际性能，本章对该系统进行了测试和分析。首先从硬件、软件以及用作测试的数据集三方面介绍了测试环境；接着介绍在GPSA中PageRank、连通分量和广度搜索三个应用的实现，测试它们在不同数据集上的运行性能，并将结果与GraphChi和X-Stream进行对比分析；最后，从对单机多核的利用率角度对系统进行测试和分析。
 
-\section{图计算框架}
+
+\section{实验环境}
+
+\subsection{硬件环境}
+本文的系统与测试都是运行在相同的计算机上。该计算机CPU为32核，主频1.8GHZ的Intel i7 cores, 16GB内存，1TB硬盘，转速7200rpm。
+\subsection{软件环境}
+本文的操作系统为Ubuntu 12.04LTS，JDK7，Kilim。另外，本文用来对比的单机图处理系统分别为GraphChi（0.2.6 C++）与X-Stream。
+
+\subsection{测试数据集}
+为了能够全面的了解GPSA的运行性能，所以我们选择四个大小不同的数据集：Google数据集、soc-pokec数据集、soc-liveJournal数据集以及twitter-2010数据集。四个数据集的大小情况如下表所示：
+\renewcommand\arraystretch{1.5}%控制行距
+\begin{table}[!h]
+\caption{基准测试集参数}\label{tab:bench}
+\vspace{0.5em}
+\centering
+\begin{tabular}{l*{1}{C{2cm}}*{1}{L{6.2cm}}}
+\toprule
+Name         & Nodes & Edges\\
+\midrule
+google      & 875,713  & 5,105,039\\
+soc-pokec      & 1,632,803 & 30,622,564\\
+soc-liveJournal      & 4,847,571 & 68,993,773\\
+twitter-2010      & 41,652,230 & 1,468,365,182\\
+
+\bottomrule
+\end{tabular}
+\vspace{\baselineskip}
+\end{table}
+\renewcommand\arraystretch{1}
+
+
+\section{性能测试}
+
+
+
+\section{多核利用率测试}
+\section{小结}
 \subsection{..}
 \subsection{..}
 \subsection{..}
