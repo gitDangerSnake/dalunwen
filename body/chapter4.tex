@@ -169,6 +169,52 @@ Twitter2010是一个非常大的数据集。通过对该数据集的测试，
 
 
 \section{多核利用率测试}
+GPSA是为运行在单机多核的系统上而设计的，所以对GPSA进行多核利用率的测试可以直观的了解GPSA。如图\ref{res:usagepr}到\ref{res:usagebfs}所示，比较了GPSA、GraphChi和X-Stream在不同的数据集上，不同的应用上运行时的对多核CPU的利用情况。
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.6\textwidth,scale=0.8]{myfigures/usagepr2.eps}
+\caption{PageRank算法的多核CPU利用率}
+\label{res:usagepr}
+\end{figure}
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.6\textwidth,scale=0.8]{myfigures/usagecc2.eps}
+\caption{CC算法的多核CPU利用率}
+\label{res:usagecc}
+\end{figure}
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.6\textwidth,scale=0.8]{myfigures/usagebfs2.eps}
+\caption{BFS算法的多核CPU利用率}
+\label{res:usagebfs}
+\end{figure}
+
+
+通过测试结果可以直观的发现，X-Stream对多核CPU的利用率最高，GPSA次之，GraphChi则相对较差。GPSA
+与GraphChi具有较好的伸缩性与灵活度，对CPU的利用率能够随着应用和数据的不同而灵活的调节,而X-Stream的灵活性和扩展性表现较差,如图\ref{res:usagecc}所示，X-Stream在soc-pokec与twitter两个数据集上都表现出了非常高的CPU利用率，可是相比于twtitter数据集的庞大，soc-pokec数据集的数据量非常小，但是两者的CPU占用情况均高达99\%。反观GraphChi与GPSA，它在处理大小不同的数据集时，对CPU的占用率则呈现出较好的扩展性，例如在图\ref{res:usagepr}中，GPSA在四个应用上对CPU的占用率分别为533\%、1208\%、1097\%、2689\%，当数据量逐步增大时，对CPU的占用率也会相应的增大。
+
+首先，GraphChi的多核CPU的利用率相对较差的主要原因在于GraphChi需要写大量的数据到磁盘，涉及大量频繁的IO操作。虽然X-Stream同样需要写入大量的数据到磁盘，但是X-Stream利用异步IO来充分利用多核CPU的优势。其次，X-Stream具有较差的伸缩性。X-Stream是以边为中心的计算模型，内步实现使用线程并发，虽然利用异步IO提高了效率，但是也导致在无论数据集大小的情况下，CPU总是被时刻占用。
+最后，GPSA在三个系统中不仅具有较高的CPU利用率，同时具有较好的伸缩性。这主要得益于GPSA的数据易变与不易变分离以及分发与计算分离，在节省大量IO操作的同时，Actor模型的轻量级并发使得在利用多核并发时相比线程并发而言更具优势。
+
+% \begin{figure}[htbp]
+%   \centering
+%   \subfigure[PageRank算法的多核CPU利用率]{
+%             \label{res:cpu:pr}
+%             \includegraphics[width=0.4\textwidth]{myfigures/usagepr2.eps}}
+%   \subfigure[CC算法的多核CPU利用率]{
+%             \label{ res:cpu:cc}
+%             \includegraphics[width=0.4\textwidth]{myfigures/usagecc2.eps}}
+
+%   \subfigure[BFS算法的多核CPU利用率]{
+%             \label{res:cpu:bfs}
+%             \includegraphics[width=0.4\textwidth]{myfigures/usagebfs2.eps}}
+
+%   \caption{多核CPU利用率}\label{res:cpu}
+% \vspace{\baselineskip}
+% \end{figure}
+
+
+
 
 \section{小结}
 
