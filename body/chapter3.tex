@@ -125,7 +125,7 @@ PageRank是著名的网页排名算法。PageRank是一种根据网页之间的�
 \vspace{\baselineskip}
 \end{figure}
 
-例如一个由5个网页组成的网图关系如图\ref{fig:pagerank}所示，A分别给网页B、网页D、网页E提供权重为1/3的投票，B给网页A提供权重为1的投票，C给网页E提供权重为1的投票，D由于没有玩连接所以D默认给每个网页提供权重为1/6的投票，E分别给网页提供群众为1/2的投票，F分别给网页提供权重为1/2的投票，构造的投票的矩阵$h$如下所示：
+如图\ref{fig:pagerank}所示，一个由5个网页组成的网图关系，A分别给网页B、网页D、网页E提供权重为1/3的投票，B给网页A提供权重为1的投票，C给网页E提供权重为1的投票，D由于没有玩连接所以D默认给每个网页提供权重为1/6的投票，E分别给网页提供群众为1/2的投票，F分别给网页提供权重为1/2的投票，构造的投票的矩阵$h$如下所示：
 % MathType!MTEF!2!1!+-
 % feaagKart1ev2aaatCvAUfeBSjuyZL2yd9gzLbvyNv2CaerbuLwBLn
 % hiov2DGi1BTfMBaeXatLxBI9gBaerbd9wDYLwzYbItLDharqqtubsr
@@ -274,7 +274,9 @@ F&1&1&1&1&1&1
 {0.31}&{0.17}&{0.88}&{0.17}&{0.03}&{0.03}\\
 {0.03}&{0.17}&{0.03}&{0.17}&{0.03}&{0.03}
 \end{array}} \right]\]
-每个顶点的权重初始化为1/6，则所有顶点的初始权重构成一个向量$x$:
+
+在该图中共有6个顶点，则每个顶点的权重初始化为1/6，则所有顶点的初始权重构成一个向量$x$:
+
 % MathType!MTEF!2!1!+-
 % feaagKart1ev2aaatCvAUfeBSjuyZL2yd9gzLbvyNv2CaerbuLwBLn
 % hiov2DGi1BTfMBaeXatLxBI9gBaerbd9wDYLwzYbItLDharqqtubsr
@@ -290,7 +292,7 @@ F&1&1&1&1&1&1
 {0.17}&{0.17}&{0.17}&{0.17}&{0.17}&{0.17}
 \end{array}} \right]\]
 
-最后，按照如下公式开始迭代，直至$x$稳定收敛：
+按照如下公式开始迭代，直至$x$稳定收敛：
 % MathType!MTEF!2!1!+-
 % feaagKart1ev2aaatCvAUfeBSjuyZL2yd9gzLbvyNv2CaerbuLwBLn
 % hiov2DGi1BTfMBaeXatLxBI9gBaerbd9wDYLwzYbItLDharqqtubsr
@@ -300,24 +302,27 @@ F&1&1&1&1&1&1
 % da9iaadEeacaWG4baaaa!39C2!
 \[x = Gx\]
 
-最后$x$的值如下所示：
+最后经过计算，$x$收敛值如下所示：
 % MathType!MTEF!2!1!+-
 % feaagKart1ev2aaatCvAUfeBSjuyZL2yd9gzLbvyNv2CaerbuLwBLn
 % hiov2DGi1BTfMBaeXatLxBI9gBaerbd9wDYLwzYbItLDharqqtubsr
 % 4rNCHbGeaGqiVu0Je9sqqrpepC0xbbL8F4rqqrFfpeea0xe9Lq-Jc9
 % vqaqpepm0xbba9pwe9Q8fs0-yqaqpepae9pg0FirpepeKkFr0xfr-x
 % fr-xb9adbaqaaeGaciGaaiaabeqaamaabaabaaGcbaGaamiEaiabg2
-% da9maadmaabaqbaeqabiGbaaaabaGaamyqaaqaaiaadkeaaeaacaWG
-% dbaabaGaamiraaqaaiaadweaaeaacaWGgbaabaGaaGimaiaac6caca
-% aIXaGaaGioaaqaaiaaicdacaGGUaGaaGymaiaaiEdaaeaacaaIWaGa
-% aiOlaiaaigdacaaIYaaabaGaaGimaiaac6cacaaIYaGaaG4maaqaai
-% aaicdacaGGUaGaaGOmaiaaiodaaeaacaaIWaGaaiOlaiaaicdacaaI
+% da9maadmaabaqbaeqabyGaaaaabaGaamyqaaqaaiaaicdacaGGUaGa
+% aGymaiaaiIdaaeaacaWGcbaabaGaaGimaiaac6cacaaIXaGaaG4naa
+% qaaiaadoeaaeaacaaIWaGaaiOlaiaaigdacaaIYaaabaGaamiraaqa
+% aiaaicdacaGGUaGaaGOmaiaaiodaaeaacaWGfbaabaGaaGimaiaac6
+% cacaaIYaGaaG4maaqaaiaadAeaaeaacaaIWaGaaiOlaiaaicdacaaI
 % 4aaaaaGaay5waiaaw2faaaaa!5020!
 \[x = \left[ {\begin{array}{*{20}{c}}
-A&B&C&D&E&F\\
-{0.18}&{0.17}&{0.12}&{0.23}&{0.23}&{0.08}
+A&{0.18}\\
+B&{0.17}\\
+C&{0.12}\\
+D&{0.23}\\
+E&{0.23}\\
+F&{0.08}
 \end{array}} \right]\]
-
 PageRank值决定了网页在网络中的排名，通过该算法，用户可以在搜索时获得更加准确和权威的信息，具有非常大的实用价值。
 
 \section{大规模图计算技术}
@@ -406,50 +411,28 @@ Akka &  是 & 是& 是 & 是\\
 Kilim是一个使用原生JAVA编写的角色模型的并发库。在Kilim中，主要的角色模型用$Task$类表示，邮箱使用$Mailbox$类表示。Kilim的角色并发过程主要由一个称为Weaver的后期进程来实现，该进程需要直接修改类的字节码，从而使包含有$Pausable$签名的方法在运行时能够支持调度程序的快速调度。
 Kilim不支持公平的调度，它的调度程序总是调度最需要对消息进行处理的角色运行。调度程序启动有限数量的内核线程。在有限的内核线程的基础上，启动更多的轻量级线程或者角色，即$Task$，每个$Task$的状态信息由$Fiber$类对其进行管理，不需要陷入内核线程，从而实现快速的上下文的切换和调度。
 
-通过继承$Task$类可以实现一个角色，Kilim的$Mailbox$类提供了诸多的消息发送和接收消息。一般而言，一个角色需要一个邮箱，但是Kilim中角色和邮箱的实现是分离的，也就意味着，可以根据具体应用的不同而灵活的组合角色和邮箱，基于Kilim编写代码也很简单，如下所示：
+通过继承$Task$类可以实现一个角色，Kilim的$Mailbox$类提供了诸多的消息发送和接收消息。一般而言，一个角色需要一个邮箱，但是Kilim中角色和邮箱的实现是分离的，也就意味着，可以根据具体应用的不同而灵活的组合角色和邮箱，基于Kilim编写代码也很简单，只需要继承$Task$类，覆盖$execute$方法，并将相应的执行逻辑放在该方法内即可。然后通过如下三个步骤完成：
 
-\begin{lstlisting}[language=JAVA]
-import kilim.Mailbox;
-import kilim.Pausable;
-import kilim.Task;
-
-public class SimpleTask extends Task {
-    static Mailbox<String> mb = new Mailbox<String>();
-    
-    public static void main(String[] args) throws Exception {
-        new SimpleTask().start();
-        Thread.sleep(10);
-        mb.putnb("Hello ");
-        mb.putnb("World\n");
-        mb.putnb("done");
-    }
-
-    public void execute() throws Pausable{
-        while (true) {
-            String s = mb.get();
-            if (s.equals("done")) break;
-            System.out.print(s);
-        }
-        
-        System.exit(0);
-    }
-}
-\end{lstlisting}
-
-
-然后通过如下三条命令：
 \begin{itemize}
-\item [编译] javac -d ./classes SimpleTask.java
- \item [weave]   java kilim.tools.Weave -d ./classes kilim.examples.SimpleTask
- \item [运行]     java -cp ./classes:./classes:\$CLASSPATH  kilim.examples.SimpleTask
+\item  编译: javac -d ./classes 类名.java
+\item weave:   java kilim.tools.Weave -d ./classes 类名全称
+\item 运行:     java -cp ./classes:./classes:\$CLASSPATH  类名
 \end{itemize}
-即可完成编译和运行操作。
 
 \section{磁盘IO}
 在大规模图处理中，除了需要将大量的数据到写入到磁盘中，同时图数据的访问又极易出现随机无序访问。在单机的图处理系统中，IO问题成为关注的重点，如何避免图数据的随机访问成为单机图处理系统提升效率的主要问题。目前，单机系统中针对IO的优化操作主要有两种：顺序访问和异步IO。
 
+\subsection{顺序访问}
 顺序访问就是按照数据存储的先后次序依次进行数据读写操作。采用顺序访问的好处在于不必把全部数据都载入内存中，只需要读取部分数据，处理部分数据即可。而在大规模图中，图的顶点之间的联系会非常的多，一条边可能一个顶点存在于内存，另一个顶点依旧保存在磁盘上，对顺序访问带来巨大的挑战。为达到顺序访问的目的，可以对边按照起始顶点进行排序，同时把边按照目的顶点进行分区，如此对分区依次进行访问，以后每次访问的数据总在当前数据访问位置的下方。
+\subsection{异步IO}
+异步IO的概念是相对于同步IO而言。在同步IO中，IO请求发出后，当前的执行过程会被阻塞直到IO操作完成返回结果之后，当前的执行过程才会继续执行。在大规模图处理过程中，会频繁的处理IO操作，同步IO会降低处理的效率。对于异步IO而言，异步调用过程发出之后，当前的执行过程会继续进行，并不会等待将消息写入磁盘完成，提高图计算的效率。
 
-异步IO的概念是相对于同步IO而言。在同步IO中，IO请求发出后，当前的执行过程会被阻塞直到IO操作完成返回结果之后，当前的执行过程才会继续执行。在大规模图处理过程中，会频繁的处理IO操作，同步IO会降低处理的效率。
+\subsection{内存映射}
+
+
+内存映射是由操作系统提供的一种将文件映射到某一进程或者应用程序的地址空间的一种技术。该技术的主要目的就是为了提升对磁盘数据的访问效率。通过内存映射技术，进程或者应用程序就可以对文件进行随机访问。在32位的操作系统上，内存映射的大小有限，最大只能映射2GB的文件；在64位的操作系统中，通过内存映射技术可以映射非常巨大的文件。对于单机上的大规模图处理而言，内存映射技术可以很好的解决图处理过程中的随机访问的问题。
+
 
 \section{小结}
+
+本章首先对图相关的概念和术语进行了介绍，并对图的相关常用算法进行说明；然后针对大规模图处理分别从计算模型、并发技术以及磁盘IO三个方面进行了详细的讨论和说明：在计算模型中，以Vertex-Centric模型作为介绍的中心，并且详细的说明为什么在Vertex-Centric之外需要BSP计算模型，同时与Edge-Centric模型进行了对比；接下来讨论多线程并发模型在在大规模图处理中的应用细节，同时指出存在于多线程并发技术中的复杂性，继而引入本文的并发技术Actor角色并发模型，并对本文选择的Actor并发库Kilim进行了简要的介绍；最后，从磁盘IO的角度对大规模图的处理进行相关的介绍与分析。
