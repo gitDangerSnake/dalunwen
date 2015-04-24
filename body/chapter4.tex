@@ -2,7 +2,7 @@
 
 \chapter{系统测试与分析}
 
-为了证实GPSA系统的实际性能，本章对该系统进行了测试和分析。首先从硬件、软件以及用作测试的数据集三方面介绍了测试环境；接着介绍在GPSA中PageRank、连通分量和广度搜索三个应用的实现，测试它们在不同数据集上的运行性能，并将结果与GraphChi和X-Stream进行对比分析；最后，从对单机多核的利用率角度对系统进行测试和分析。
+为了证实GPSA系统的实际性能，本章对该系统进行了测试和分析。首先从硬件、软件以及用作测试的数据集三方面介绍了测试环境；接着通过PageRank、连通分量和广度搜索三个应用，测试GPSA在不同数据集上的运行性能，并将结果与GraphChi和X-Stream进行对比分析；最后，从对单机多核的利用率角度对系统进行测试和分析。
 
 
 \section{实验环境}
@@ -34,80 +34,6 @@ twitter-2010      & 41,652,230 & 1,468,365,182\\
 \end{table}
 \renewcommand\arraystretch{1}
 
-\section{应用}
-在GPSA的框架上实现应用会非常简单，一般情况下只需要实现\textit{Handler}接口，在该接口必须要实现的函数有两个：\textnormal{init(sequence)}和\textnormal{compute(val,msgVal,args)}。其中，\textnormal{init}函数主要用于初始化顶点的状态信息，而compute方法则用于在计算Actor处理消息时进行调用。除此之外，还有一些可选函数，例如消息生成函数、更新判定等，如果不实现这些可选函数，则会以默认方式进行计算。例如，若不实现消息生成函数，则默认将顶点的最新状态打包进消息中进行发送。
-
-\subsection{PageRank}
-PageRank是著名的网页排名算法。在GPSA中实现该算法，需要实现\textit{Handler}接口，将顶点的初始值初始化为1.0，然后当计算Actor接收到消息进行计算时，需要对这些消息进行累加，如算法\ref{al:pr}所示。
-\begin{algorithm}
-{
-{
-\renewcommand\baselinestretch{1.5}\selectfont %控制行距
-
-\caption{PageRank}
-\label{al:pr}
-\begin{algorithmic}[1]
-\REQUIRE ~\\
-	$val,msgVal,args$
-\ENSURE ~\\
-	$newVal$
-\IF{$args[0]$}
-	 \RETURN $ 0.15f$
-\ENDIF
-\RETURN $0.85*msgVal + vertexVal$
-
-\end{algorithmic}
-}
-\par}
-\end{algorithm}
-
-\subsection{BFS}
-BFS是对图进行广度遍历的算法。在GPSA中实现该算法则需要指定起始遍历的顶点，起始顶点的值初始化为0，其他顶点初始化为无穷大，通过发送消息并对消息进行计算可以得到某一个顶点在广度遍历中在整个图中的遍历层次。对于一个顶点而言，假如\textit{V}所处的层次为n，那么它的出边的顶点的层次在没有其他干扰情况下（例如，这些顶点同时也是层次为n-1的顶点的出边目的顶点）是n+1。否则，可以通过比较他的目的顶点的层次与它的消息中的新层次，最小的那个即为其在广度遍历算法中的层次。由于无法保证消息的发送和接收顺序，所以在计算函数中通过比较消息的值的层次的大小，并将值最小的消息加1之后作为返回值，具体实现如算法\ref{al:bfs}。
-\begin{algorithm}
-{
-{
-\renewcommand\baselinestretch{1.5}\selectfont %控制行距
-
-\caption{Breadth First Search}
-\label{al:bfs}
-\begin{algorithmic}[1]
-\REQUIRE ~\\
-	$val,msgVal,args$
-\ENSURE ~\\
-	$newVal$
-\IF{$msgVal < val$}
-	 \RETURN $ msgVal + 1$
-\ENDIF
-\RETURN $val$
-
-\end{algorithmic}
-}
-\par}
-\end{algorithm}
-\subsection{CC}
-联通分量的实现过程与广度搜索类似，但是在初始化的时候，将所有顶点的值初始化为其自身\textit{id}，然后在计算函数中通过比较两者的\textit{id}的大小，选择返回较小值。这样，计算完成
-之后，处在同一个连通分量中的顶点拥有相同的\textit{id}，具体实现如算法\ref{al:cc}所示。
-\begin{algorithm}
-{
-{
-\renewcommand\baselinestretch{1.5}\selectfont %控制行距
-
-\caption{CC}
-\label{al:cc}
-\begin{algorithmic}[1]
-\REQUIRE ~\\
-	$val,msgVal,args$
-\ENSURE ~\\
-	$newVal$
-\IF{$msgVal < val$}
-	 \RETURN $ msgVal$
-\ENDIF
-\RETURN $val$
-
-\end{algorithmic}
-}
-\par}
-\end{algorithm}
 
 \section{性能测试}
 本文不仅对GPSA系统在不同应用、不同数据集上的表现进行了测试，同时还将之横向与其他单机上的图处理系统进行对比。为保证测试的公正与直观，GPSA、GraphChi和X-Stream均以默认设置运行，通过计算其运行相同步骤所消耗的时间作为性能对比的主要指标。所有的测试都是在同一台计算机上进行，并且分别运行三次其最终的运行时间的平均值。由于GPSA和GraphChi在运行时需要指定运行的迭代次数，而X-Stream则不需要指定该迭代次数。考虑到图计算过程在最开始的若干超级步中的处理速度可以较为直观的反映出计算的效率，因此本文测试了开始前5个超级步的平均消耗时间作为对比的标准。另外，GraphChi和X-Stream的三个测试应用均采用其官方提供的实现。
@@ -218,7 +144,7 @@ GPSA是为运行在单机多核的系统上而设计的，所以对GPSA进行多
 
 \section{小结}
 
-本章首先详细介绍了实验测试的软硬件环境与测试数据集，接着介绍PageRank，连通分量、广度优先搜索三个应用、并对其在不同测试数据集上的运行情况进行性能测试与对比。通过效率和多核利用率两个方面的对比证明基于新模型的GPSA单机多核系统上的图处理系统不仅具有便捷高效的特点，同时还能充分发挥多核的优势。
+本章首先详细介绍了实验测试的软硬件环境与测试数据集，接着通过PageRank，连通分量、广度优先搜索三个应用在不同测试数据集上的运行情况与GraphChi和X-Stream进行性能测试与对比。通过效率和多核利用率两个方面的对比证明基于新模型的GPSA单机多核系统上的图处理系统不仅具有便捷高效的特点，同时还能充分发挥多核的优势。
 
 
 
