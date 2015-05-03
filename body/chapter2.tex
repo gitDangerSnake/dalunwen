@@ -106,13 +106,13 @@ CSR格式将顶点\textit{id}和边分别用两个数组进行保存，其中边
 
 \section{消息分发}
 消息是本系统的重要关注和处理的对象，虽然Actor-BSP模型的优势使得无需为消息进行额外的缓存，但是合理的消息产生和分发策略对系统的效率有着重要的影响。
-\subsection{消息}
+
 一般来说消息的主要有两部分内容组成：目的顶点和消息的值。目的顶点表明该消息前往的顶点，同时也会影响由哪个具体的计算Actor来处理该消息。消息的值则是计算Actor用来进行计算的数据。虽然消息的生成工作主要是由分发Actor负责，但是消息的值的生成方法根据应用的不同具体的生成算法也不一样。例如，在遍历应用中，消息的值则是一个表示从源点开始到目前顶点的一个层次数，而在PageRank算法中，消息的值则是当前顶点的权值均分到他的出边邻接顶点的浮点数。所以，具体的消息的实现过程，由用户自己实现，分发Actor则调用具体的生成算法产生消息。
-\subsection{分发策略}
+
 当消息生成之后，分发Actor需要将消息分发给计算Actor。在Actor-BSP模型中，以顶点为中心的方式被无状态的Actor代替，计算Actor需要均衡的处理这些消息。虽然Actor的上下文切换远比线程轻量级，但是Actor的调度依然可能成为性能的制约因素，所以需要对消息的分发过程进行额外的硬性控制来避免某个计算Actor的负载过重。理论上来说，每个计算Actor都应该处理差不多个数的消息，但是由于图结构是无规律的，消息的发送目的地也有很大程度的随意性，在短时间内平均地将消息发送给计算Actor的可能性也微乎其微。为达到这样的目的，GPSA在预处理阶段对计算Actor进行了任务分配，将消息按照目的顶点的次序均分给计算Actor。在分发的过程中，如果某个计算Actor的邮箱已满，无法接受更多消息，那么该消息将会发送到目前消息数目最少的计算Actor的邮箱中，从而实现动态均衡。
 
 \section{数据更新}
-计算Actor接收到消息之后，调用用户实现的具体计算函数，如果经过计算之后顶点的状态发生改变，那么计算Actor就需要更新顶点的状态信息写入内存。由于计算Actor和分发Actor对数据访问的行为不同，所以需要两份不同的顶点信息的拷贝。其中一份拷贝供分发Actor查询使用，该数据是上一个超级步后的结果；另外一份拷贝则供计算Actor进行更新。由于两份数据以“Two-Column”的方式进行保存，两份数据就可以以列进行区分，如图\ref{fig:vu}所示。计算Actor和分发Actor对这两列数据依次交替访问，计算Actor访问的数据列是计算列，而分发Actor访问的数据列是分发列。
+计算Actor接收到消息之后，调用用户实现的具体计算函数，如果经过计算之后顶点的状态发生改变，那么计算Actor就需要更新顶点的状态信息写入内存。由于计算Actor和分发Actor对数据访问的行为不同，所以需要两份不同的顶点信息的拷贝。其中一份拷贝供分发Actor查询使用，该数据是上一个超级步的结果；另外一份拷贝则供计算Actor进行更新。由于两份数据以“Two-Column”的方式进行保存，两份数据就可以以列进行区分，如图\ref{fig:vu}所示。计算Actor和分发Actor对这两列数据依次交替访问，计算Actor访问的数据列是计算列，而分发Actor访问的数据列是分发列。
 
 \begin{figure}[htbp]
 \centering
@@ -121,7 +121,35 @@ CSR格式将顶点\textit{id}和边分别用两个数组进行保存，其中边
 \vspace{\baselineskip}
 \end{figure}
 
-在初始化结束之后，顶点的两列状态信息是相同的。分发Actor访问分发列的数据，然后计算Actor对计算列数据进行更新。在计算的过程中，为了避免消息的重复发送，同时保证计算Actor能够取得正确的顶点状态数据，将状态数据的最高位作为标识位。如果高位为1并且超级步\textit{i}大于0，则表示该数据在上一个超步中没有发生更新，分发Actor将会跳过该顶点，若高位为0，则说明数据在上一个超级步发生了更新，分发Actor会将此处数据对应的顶点的更新消息发送给它的邻接顶点，然后分发Actor将其高位置0。若超级步为0，则分发Actor会依次将顶点的状态信息发送出去。对于计算Actor，如果读取到的数据高位为1，则表明该数据尚未被更新，此时计算Actor将会读取该顶点的最新的状态信息，即从分发列对应位置获得最新值，如果计算之后顶点状态信息发生更新则把计算之后的新数据写入到当前顶点的计算列，否则不更新，下次读取数据依然从分发列读取数据。若计算Actor读取到的数据高位为0，则表明当前位置的数据是最新的，将会直接读取数据进行计算。如图\ref{fig:vu}所示，在初始化时，两列数据都相同并且最高位都为1。在超级步\textit{0}中，分发Actor对所有顶点的状态信息发送出去，计算Actor在接收到消息之后对计算列的数据进行更新。在超级步\textit{1}中，计算列和分发列互换位置，根据高位信息依次进行消息分发和数据更新。
+在初始化结束之后，顶点的两列状态信息是相同的。分发Actor访问分发列的数据，然后计算Actor对计算列数据进行更新。在计算的过程中，为了避免消息的重复发送，同时保证计算Actor能够取得正确的顶点状态数据，将状态数据的最高位作为标识位。如果状态数据的最高位为1，则表示该数据在上一个超级步中没有发生更新，分发Actor将会跳过该顶点；若高位为0，则说明数据在上一个超级步中发生更新，分发Actor需要将该更新发送出去。该约束条件在以下两个情况下会被忽略：
+\begin{itemize}
+\item 超级步为0的情况：在第0个超级步中，顶点的状态信息最高位被初始化为1的，所以在第0个超级步中分发Actor不需要判定高位的情况。
+\item 错误恢复的情况：如果GPSA在某次运行中崩溃，需要从某一超级步恢复，此时恢复的时候分发Actor无需判定高位情况。
+\end{itemize}
+
+那么，顶点的状态信息的更新由分发Actor和计算Actor协同完成，分发Actor的主要更新步骤如下：
+
+\begin{itemize}
+\item 如果当前超级步为0或者是从某一个超级步恢复，分发Actor依次读取数据并将状态信息发送出去。
+\item 如果当前超级步大于0并且状态信息的高位若为1，则表明该数据尚未被更新，分发Actor将会跳过该数据。
+\item 如果当前超级步大于0并且状态信息的高位若为0，分发Actor对该数据的更新信息进行分发，并在消息分发完成后，将该数据的高位置1。
+\end{itemize}
+
+计算Actor的主要更新步骤如下：
+
+\begin{itemize}
+\item 如果超级步为0，计算Actor从计算列读取顶点信息，无需判定高位情况。
+\item 如果超级步大于0，计算Actor如果读取到的数据高位为1，则表明该数据不可用，此时计算Actor将会读取该顶点上一个超级步后的最新结果，即从分发列对应位置获得最新值。
+\item 如果超级步大于0，计算Actor如果读取到的数据高位为0，则表明当前位置的数据是最新的，将会直接读取数据进行计算。
+\item 无论哪种情况，如果计算之后顶点状态信息发生更新则把计算之后的新数据写入到当前顶点的计算列，否则不更新，下次读取数据依然从分发列读取数据。
+\end{itemize}
+
+图\ref{fig:vu}是图\ref{fig:graph}中的图求联通分量时，顶点的状态信息的更新流程。在初始化时，每个顶点的状态信息依次被初始化为它自身的$id+1$，两列数据相同并且最高位为1。
+
+在超级步\textit{0}中，分发Actor不判定顶点状态信息的高位情况，将所有顶点的状态信息发送出去，计算Actor在接收到消息之后根据消息值与顶点的值比较，选择较小的值作为新的顶点状态信息的值，如顶点2在超级步0中接收到来自顶点0的消息值为1，接收到来自顶点3的消息值为4，则计算Actor计算之后将顶点2的状态信息更新为1，并且高位为0，而顶点0由于在超级步0中，并没有发生更新所以结果为1，并且高位为1。
+
+然后，超级步\textit{1}中，计算列和分发列互换位置，可以看到顶点2、3、4、5发生更新所以将会发送消息并在顶点消息发送完之后将相应的高位置1，而顶点0、1高位为1，将会被跳过。依次类推，直到计算完成。
+
 
 \section{GPSA工作模块实现}
 % 在上文，我们详细的分析了GPSA的设计细节，本部分则对GPSA的功能模块和实现过程进行详细的阐述。
@@ -129,7 +157,6 @@ CSR格式将顶点\textit{id}和边分别用两个数组进行保存，其中边
 
 GPSA的实现基于JAVA和Kilim角色并发框架。在GPSA中，输入是在上文中详述的以二进制形式保存的数据文件，包括顶点的状态信息和边的信息；输出则是经过计算之后图中顶点的状态信息。如图\ref{fig:overview}，GPSA主要包括三个功能模块：预处理、Manager管理模块、Actor工作模块。预处理模块主要涉及对计算开始之前的初始化工作；Manager管理模块负责对计算进行协调与控制；分发Actor负责消息的产生和分发；计算Actor则是计算的基本执行单元。
 
-·
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.8\textwidth]{myfigures/newexample.eps}
@@ -149,16 +176,13 @@ GPSA默认对边集存储的数据进行预处理。
 \[\frac{m}{n} \le k < \frac{m}{{n - 1}}\]
 
 预处理模块根据顶点的入度计算每个Actor所应处理的消息个数，并生成相应的区间对象，将其传递给Manager管理者。
-\subsection{Manager管理模块}
-Manager主要负责初始化计算，协调分发和计算的有序进行以及异常处理。在计算开始执行之前，图数据需要准备就绪，Manager调用预处理模块对图进行处理，根据图的基本信息计算出最小的顶点\textit{id}和最大的顶点\textit{id}，调用用户定义初始化函数对顶点的状态信息进行初始化，并将结果写入顶点信息内存映射文件，完成对顶点初始信息的初始化。另外，manager需要根据用户指定的分发Actor和计算Actor数目，初始化对应数目的Actor。
 
-初始化工作完成之后，Manager主要对计算过程进行协调。如算法\ref{algo:manager}所示，首先Manager向分发Actor发送\textit{ITERATION\_START}信号。接收到\textit{ITERATION\_START}信号的分发Actor会开始访问存储在磁盘上的CSR格式的图数据，调用用户定义的消息生成规则函数打包消息。当分发Actor在当前超级步的消息分发任务完成之后，分发Actor用\textit{DISPATCH\_OVER}信号通知Manager。如果所有的分发Actor都完成之后，Manager紧接着向所有的计算Actor发送\textit{COMPUTE\_OVER}信号。如果计算Actor处理到该消息则会意识到本超级步的计算工作已经完成，此时它会回复Manager一个同样的\textit{COMPUTE\_OVER}。最后，如果计算满足结束条件，Manager向所有的Actor发送\textit{SYSTEM\_OVER}，当Actor接受到该信号将会退出自身的执行循环，结束生命周期。
 
-\begin{algorithm}[htb!]
+\begin{algorithm}
 {
 {
 
-\renewcommand\baselinestretch{1.5}\selectfont %控制行距
+%\renewcommand\baselinestretch{1.5}\selectfont %控制行距
 
 \caption{Manager Execution Loop}
 \label{algo:manager}
@@ -200,23 +224,22 @@ Initialize dispatchers,computers,mailbox,
 }
 \par}
 \end{algorithm}
+\subsection{Manager管理模块}
+Manager主要负责初始化计算，协调分发和计算的有序进行以及异常处理。在计算开始执行之前，图数据需要准备就绪，Manager调用预处理模块对图进行处理，根据图的基本信息计算出最小的顶点\textit{id}和最大的顶点\textit{id}，调用用户定义初始化函数对顶点的状态信息进行初始化，并将结果写入顶点信息内存映射文件，完成对顶点初始信息的初始化。另外，manager需要根据用户指定的分发Actor和计算Actor数目，初始化对应数目的Actor。
+
+初始化工作完成之后，Manager主要对计算过程进行协调。如算法\ref{algo:manager}所示，首先Manager向分发Actor发送\textit{ITERATION\_START}信号。接收到\textit{ITERATION\_START}信号的分发Actor会开始访问存储在磁盘上的CSR格式的图数据，调用用户定义的消息生成规则函数打包消息。当分发Actor在当前超级步的消息分发任务完成之后，分发Actor用\textit{DISPATCH\_OVER}信号通知Manager。如果所有的分发Actor都完成之后，Manager紧接着向所有的计算Actor发送\textit{COMPUTE\_OVER}信号。如果计算Actor处理到该消息则会意识到本超级步的计算工作已经完成，此时它会回复Manager一个同样的\textit{COMPUTE\_OVER}。最后，如果计算满足结束条件，Manager向所有的Actor发送\textit{SYSTEM\_OVER}，当Actor接受到该信号将会退出自身的执行循环，结束生命周期。
 
 \subsection{Actor工作模块}
 Actor模块是系统中最重要的组成部分，该模块主要负责消息的生成和计算并更新数据。在该模块中主要包含两种无状态Actor：分发Actor和计算Actor。
 
 %分发Actor从磁盘上顺序读取边，根据初始化信息或者上个超级步中顶点的更新情况，调用用户自定义的消息产生函数生成新消息，并将消息发送到边的目的顶点所对应的计算Actor。
-分发Actor的工作流程如算法\ref{algo:dispatcher} 所示，分发Actor等待来自Manager的\textit{ITERATION\_START}的信号，接收到信号后分发Actor开始进入执行循环，检查处理的边的起止信息，从起止信息的起始位置开始顺序从磁盘上读取一条边，获取该边起始顶点的顶点的状态信息，如果当前超级步不是0并且信息高位为1，则表明当前顶点的状态信息在上一个超级步中没有发生更新，需要跳过该顶点，继续处理下一个顶点，\textit{skip(sequence)}函数，则会让当前的顶点\textit{id}加1，同时跳过该顶点的所有边，寻址到下一个顶点的第一条边的偏移地址。若当前超级步为0或者高位为0，则表明该顶点处于初始化之后的状态或者在上一个超级步中发生了更新，分发Actor调用用户提供的\textit{genMsg()}实现生成消息，根据分发策略将消息发送出去。如果读取边的目的顶点为-1，则表明当前顶点处理完毕，并将该顶点的状态信息状态最高位置1表明处理完成。如此周而复始，直至完成分发任务，分发Actor用\textit{DISPATCH\_OVER}通知Manager。
-
 \begin{algorithm}
 {
 {
-
-\renewcommand\baselinestretch{1.5}\selectfont %控制行距
-
+%\renewcommand\baselinestretch{1.5}\selectfont %控制行距
 \caption{Dispatcher Execution Loop}
 \label{algo:dispatcher}
 \begin{algorithmic}[1]
-
 \STATE
  $signal \leftarrow mailbox.get()$
 \WHILE{ $signal != SYSTEM\_OVER$ }
@@ -251,14 +274,12 @@ Actor模块是系统中最重要的组成部分，该模块主要负责消息的
 \par}
 \end{algorithm}
 
-
-计算Actor的工作流程如算法\ref{algo:computer}所示，计算Actor等待来自Manager的消息，然后进入执行循环体。否则计算Actor从消息中提取目的顶点和消息的值，根据目的顶点从顶点的状态信息内存映射文件中读取顶点值，然后调用用户提供的\textit{compute(val,msgVal)}实现对其进行计算，计算返回一个新的顶点状态信息。如果新的顶点状态与之前的值相比发生了改变，则将新数据更新到内存映射文件，否则丢弃。如此迭代，直到计算Actor接受到的信号是\textit{COMPUTE\_OVER}，则表示当前的超级步的计算完成，同时用\textit{COMPUTE\_OVER}回复Manager。如果计算Actor接收到\textit{SYSTEM\_OVER}信号，则会结束计算退出循环。
+分发Actor的工作流程如算法\ref{algo:dispatcher} 所示，分发Actor等待来自Manager的\textit{ITERATION\_START}的信号，接收到信号后分发Actor开始进入执行循环，检查处理的边的起止信息，从起止信息的起始位置开始顺序从磁盘上读取一条边，获取该边起始顶点的顶点的状态信息，如果当前超级步不是0并且信息高位为1，则表明当前顶点的状态信息在上一个超级步中没有发生更新，需要跳过该顶点，继续处理下一个顶点，\textit{skip(sequence)}函数，则会让当前的顶点\textit{id}加1，同时跳过该顶点的所有边，寻址到下一个顶点的第一条边的偏移地址。若当前超级步为0或者高位为0，则表明该顶点处于初始化之后的状态或者在上一个超级步中发生了更新，分发Actor调用用户提供的\textit{genMsg()}实现生成消息，根据分发策略将消息发送出去。如果读取边的目的顶点为-1，则表明当前顶点处理完毕，并将该顶点的状态信息状态最高位置1表明处理完成。如此周而复始，直至完成分发任务，分发Actor用\textit{DISPATCH\_OVER}通知Manager。
 
 \begin{algorithm}
 {
 {
-\renewcommand\baselinestretch{1.5}\selectfont %控制行距
-
+%\renewcommand\baselinestretch{1.5}\selectfont %控制行距
 \caption{Compute Execution Loop}
 \label{algo:computer}
 \begin{algorithmic}[1]
@@ -284,6 +305,10 @@ Actor模块是系统中最重要的组成部分，该模块主要负责消息的
 }
 \par}
 \end{algorithm}
+
+计算Actor的工作流程如算法\ref{algo:computer}所示，计算Actor等待来自Manager的消息，然后进入执行循环体。否则计算Actor从消息中提取目的顶点和消息的值，根据目的顶点从顶点的状态信息内存映射文件中读取顶点值，然后调用用户提供的\textit{compute(val,msgVal)}实现对其进行计算，计算返回一个新的顶点状态信息。如果新的顶点状态与之前的值相比发生了改变，则将新数据更新到内存映射文件，否则丢弃。如此迭代，直到计算Actor接受到的信号是\textit{COMPUTE\_OVER}，则表示当前的超级步的计算完成，同时用\textit{COMPUTE\_OVER}回复Manager。如果计算Actor接收到\textit{SYSTEM\_OVER}信号，则会结束计算退出循环。
+
+
 
 
 \section{小结}
