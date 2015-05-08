@@ -1,0 +1,29 @@
+This is BibTeX, Version 0.99dThe top-level auxiliary file: hnumain.aux
+A level-1 auxiliary file: body/chapter1.aux
+A level-1 auxiliary file: body/chapter3.aux
+A level-1 auxiliary file: body/chapter2.aux
+A level-1 auxiliary file: body/chapter5.aux
+A level-1 auxiliary file: body/chapter4.aux
+A level-1 auxiliary file: body/conclusion.aux
+The style file: HNUThesis.bst
+A level-1 auxiliary file: appendix/acknowledgements.aux
+A level-1 auxiliary file: appendix/publications.aux
+Database file #1: references/reference.bib
+I was expecting a `,' or a `}'---line 72 of file references/reference.bib
+ : 
+ : @article{wangshan2011jiagoudashuju,
+(Error may have been on previous line)
+I'm skipping whatever remains of this entry
+-- HNUTThesis.bst version 0.1 (2013/08/20) by Du Jiayi.
+-- https://code.google.com/p/hnuthesis/
+-- See the "userguide.pdf" manual for usage information.
+Warning--can't use both volume and number fields in hong2012green
+Warning--can't use both volume and number fields in gonzalez2012powergraph
+Warning--can't use both volume and number fields in shun2013ligra
+Warning--there's a publisher but no address in sunhuiquan2004
+Warning--there's a publisher but no address in srinivasan2008kilim
+Warning--there's a school but no address in srinivasan2010kilim
+Warning--empty journal in karp1988survey
+
+Done.
+(There was 1 error message)
