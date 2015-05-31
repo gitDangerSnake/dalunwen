@@ -128,7 +128,7 @@ PageRank是著名的网页排名算法。在以顶点为中心的计算模型中
 \subsection{google数据集测试}
 图\ref{res:google}展示PageRank、连通分量和广度搜索三个应用在Google测试数据上的运行结果。通过对比可以发现，在PageRank和广度搜索应用中，GraphChi的性能最好，X-stream次之。在连通分量应用中，X-Stream的性能最好，GraphChi次之。在PageRank中，GPSA比GraphChi和X-Stream慢大约4倍；在广度搜索中，GPSA比GraphChi和X-Stream慢大约0.2倍；虽然在连通分量中，GPSA与GraphChi几乎持平，但是依然比X-Stream慢。
 
-首先，google的数据集相对较小，整个图的文件大小在100MB范围内，可以完全载入内存。GraphChi和X-Stream省去了较多磁盘IO操作，在内存中可以完成所有数据操作。而GPSA由于将图的数据部分保存在磁盘中，所以会有部分的磁盘IO顺序读取。其次，框架的实现有区别。GraphChi和X-Stream使用C/C++实现，而GPSA使用JAVA和Kilim实现，会无可避免的出现垃圾回收等问题，所以在语言效率上，GPSA略逊一筹。
+首先，google的数据集相对较小，整个图的文件大小在100MB范围内，可以完全载入内存。GraphChi和X-Stream省去了较多磁盘I/O操作，在内存中可以完成所有数据操作。而GPSA由于将图的数据部分保存在磁盘中，所以会有部分的磁盘I/O顺序读取。其次，框架的实现有区别。GraphChi和X-Stream使用C/C++实现，而GPSA使用JAVA和Kilim实现，会无可避免的出现垃圾回收等问题，所以在语言效率上，GPSA略逊一筹。
 
 \begin{figure}[htbp]
 \centering
@@ -165,13 +165,13 @@ PageRank是著名的网页排名算法。在以顶点为中心的计算模型中
 \label{res:journal}
 \end{figure}
 
-通过图\ref{res:pokec}和图\ref{res:journal}的实验结果可以发现实验结果具有一定的一致性，GPSA的测试性能与在Google数据上有着巨大的差别。首先，从上文数据集的信息介绍中可以发现soc-Pokec和soc-liveJournal两个数据集都是中等规模大小的图数据，无论是顶点数目还是边的数目都比比Google数据集大的多。因此，GraphChi和X-Stream需要对数据进行分批载入，同时在超级步完成之后，需要写大量的数据到磁盘，引发大量的磁盘IO操作。而GPSA由于无需保存大量的数据到磁盘，所以在超级步更替的时候，无需额外的IO操作，效率较之两者有着明显提高。其次，可以看到GPSA和GraphChi的性能比X-Stream好。这主要是因为X-Stream是以边为中心的模型，所以在每次计算时都需要对所有的边进行迭代，而GraphChi以顶点为中心，在每次计算过程中，对于未发生过更新的顶点会跳过，减少消息量与计算量。虽然在GPSA中将顶点以Actor进行了替换，但是GPSA依然继承了对顶点状态的检查操作，使得与GraphChi有着同样的优势。
+通过图\ref{res:pokec}和图\ref{res:journal}的实验结果可以发现实验结果具有一定的一致性，GPSA的测试性能与在Google数据上有着巨大的差别。首先，从上文数据集的信息介绍中可以发现soc-Pokec和soc-liveJournal两个数据集都是中等规模大小的图数据，无论是顶点数目还是边的数目都比比Google数据集大的多。因此，GraphChi和X-Stream需要对数据进行分批载入，同时在超级步完成之后，需要写大量的数据到磁盘，引发大量的磁盘I/O操作。而GPSA由于无需保存大量的数据到磁盘，所以在超级步更替的时候，无需额外的I/O操作，效率较之两者有着明显提高。其次，可以看到GPSA和GraphChi的性能比X-Stream好。这主要是因为X-Stream是以边为中心的模型，所以在每次计算时都需要对所有的边进行迭代，而GraphChi以顶点为中心，在每次计算过程中，对于未发生过更新的顶点会跳过，减少消息量与计算量。虽然在GPSA中将顶点以Actor进行了替换，但是GPSA依然继承了对顶点状态的检查操作，使得与GraphChi有着同样的优势。
 
 \subsection{twitter-2010数据集测试}
 图\ref{res:twitter}展示了GPSA、GraphChi和X-Stream在soc-Twitter-2010数据集上分别运行PageRank、连通分量和广度搜索三个应用的运行结果。通过对比实验结果可以发现，在PageRank中，GPSA比GraphChi快大约2倍，比X-Stream快8倍；在连通分量的测试中，GPSA比GraphChi快大约5倍，比X-Stream快约4倍；在广度搜索中，GPSA比X-Stream快约6倍。（由于GraphChi的官方提供的广度搜索实现在对数据进行预处理完之后，无法继续运行，所以此处的数据无从得知。）
 
 Twitter2010是一个非常大的数据集。通过对该数据集的测试，
-可以充分展示GPSA在性能方面的提升与应对大规模图的计算能力。首先，在设计之初，GPSA将计算过程和分发过程进行分离，以一种重叠的方式并发运行，缩短了BSP模型中在垂直方向上的平均执行时间。其次，GPSA 将图的数据分为易变的顶点信息和不易变的边信息区别对待，部分保存在磁盘上，部分保存在内存中，实现了数据的随机访问，降低IO开销。最后，GPSA中计算Actor和分发Actor的协同工作使得无需保存大量的中间消息，只须关注计算结果，简化了计算过程。
+可以充分展示GPSA在性能方面的提升与应对大规模图的计算能力。首先，在设计之初，GPSA将计算过程和分发过程进行分离，以一种重叠的方式并发运行，缩短了BSP模型中在垂直方向上的平均执行时间。其次，GPSA 将图的数据分为易变的顶点信息和不易变的边信息区别对待，部分保存在磁盘上，部分保存在内存中，实现了数据的随机访问，降低I/O开销。最后，GPSA中计算Actor和分发Actor的协同工作使得无需保存大量的中间消息，只须关注计算结果，简化了计算过程。
 
 \begin{figure}[htbp]
 \centering
@@ -206,8 +206,8 @@ GPSA是为运行在单机多核的系统上而设计的，所以对GPSA进行多
 通过测试结果可以直观的发现，X-Stream对多核CPU的利用率最高，GPSA次之，GraphChi则相对较差。GPSA
 与GraphChi具有较好的伸缩性与灵活度，对CPU的利用率能够随着应用和数据的不同而灵活的调节,而X-Stream的灵活性和扩展性表现较差,如图\ref{res:usagecc}所示，X-Stream在soc-pokec与twitter两个数据集上都表现出了非常高的CPU利用率，可是相比于twtitter数据集的庞大，soc-pokec数据集的数据量非常小，但是两者的CPU占用情况均高达99\%。反观GraphChi与GPSA，它在处理大小不同的数据集时，对CPU的占用率则呈现出较好的扩展性，例如在图\ref{res:usagepr}中，GPSA在四个应用上对CPU的占用率分别为533\%、1208\%、1097\%、2689\%，当数据量逐步增大时，对CPU的占用率也会相应的增大。
 
-首先，GraphChi的多核CPU的利用率相对较差的主要原因在于GraphChi需要写大量的数据到磁盘，涉及大量频繁的IO操作。虽然X-Stream同样需要写入大量的数据到磁盘，但是X-Stream利用异步IO来充分利用多核CPU的优势。其次，X-Stream具有较差的伸缩性。X-Stream是以边为中心的计算模型，内部实现使用线程并发，虽然利用异步IO提高了效率，但是也导致在X-Stream对CPU的占用率最高，缺乏一定的弹性。
-最后，GPSA在三个系统中不仅具有较高的CPU利用率，同时具有较好的伸缩性。这主要得益于GPSA的数据易变与不易变分离以及分发与计算分离，在节省大量IO操作的同时，Actor模型的轻量级并发使得在利用多核并发时相比线程并发而言更具优势。
+首先，GraphChi的多核CPU的利用率相对较差的主要原因在于GraphChi需要写大量的数据到磁盘，涉及大量频繁的I/O操作。虽然X-Stream同样需要写入大量的数据到磁盘，但是X-Stream利用异步I/O来充分利用多核CPU的优势。其次，X-Stream具有较差的伸缩性。X-Stream是以边为中心的计算模型，内部实现使用线程并发，虽然利用异步I/O提高了效率，但是也导致在X-Stream对CPU的占用率最高，缺乏一定的弹性。
+最后，GPSA在三个系统中不仅具有较高的CPU利用率，同时具有较好的伸缩性。这主要得益于GPSA的数据易变与不易变分离以及分发与计算分离，在节省大量I/O操作的同时，Actor模型的轻量级并发使得在利用多核并发时相比线程并发而言更具优势。
 
 % \begin{figure}[htbp]
 %   \centering
